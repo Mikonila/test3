@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Calm Space</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:        #f0f4f8;
+    --surface:   #ffffff;
+    --surface2:  #edf2f7;
+    --primary:   #6c8ebf;
+    --primary-d: #4a6fa5;
+    --primary-g: linear-gradient(135deg, #7ba7d4 0%, #4a6fa5 100%);
+    --accent:    #a8d5ba;
+    --accent-d:  #52b788;
+    --accent-g:  linear-gradient(135deg, #74c69d 0%, #40916c 100%);
+    --text:      #1a2433;
+    --muted:     #64748b;
+    --border:    rgba(0,0,0,.07);
+    --danger:    #ef5350;
+    --shadow-sm: 0 1px 4px rgba(0,0,0,.06);
+    --shadow:    0 4px 20px rgba(0,0,0,.08);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,.12);
+    --radius:    18px;
+    --radius-sm: 12px;
+    --tab-h:     62px;
+    --btn-text:  #ffffff;
+    --header-h:  100px;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Layout ── */
+  #app { display:flex; flex-direction:column; min-height:100vh; }
+  #screen-container {
+    flex:1; overflow-y:auto;
+    padding: 0 0 calc(var(--tab-h) + 12px);
+  }
+  .screen { display:none; }
+  .screen.active { display:block; animation: fadein .3s cubic-bezier(.22,1,.36,1); }
+  @keyframes fadein { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
+  /* ── Screen hero header ── */
+  .screen-header {
+    padding: 20px 20px 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .screen-header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: var(--primary-g);
+    opacity: .08;
+    border-radius: 0 0 28px 28px;
+  }
+  .screen-header-emoji {
+    font-size: 36px; line-height: 1; margin-bottom: 8px; display: block;
+  }
+  .screen-header h1 {
+    font-size: 24px; font-weight: 800; letter-spacing: -.4px;
+    color: var(--text); margin-bottom: 4px;
+  }
+  .screen-header p {
+    font-size: 13px; color: var(--muted); font-weight: 400;
+  }
+
+  /* ── Screen body ── */
+  .screen-body { padding: 16px 16px 4px; }
+
+  /* ── Tab bar ── */
+  #tabbar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: var(--tab-h);
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    z-index: 100;
+    box-shadow: 0 -4px 20px rgba(0,0,0,.07);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .tab {
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:3px; font-size:10px; font-weight:500; color:var(--muted); cursor:pointer;
+    transition: color .2s; border:none; background:none; position:relative;
+  }
+  .tab .icon { font-size:20px; line-height:1; transition: transform .2s; }
+  .tab.active .icon { transform: scale(1.15); }
+  .tab.active { color: var(--primary-d); }
+  .tab.active::after {
+    content:''; position:absolute; top:0; left:50%; transform:translateX(-50%);
+    width:28px; height:3px; background:var(--primary-d);
+    border-radius:0 0 4px 4px;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: var(--shadow);
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+  }
+  .card-title {
+    font-size: 14px; font-weight: 700; color: var(--text);
+    margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+    text-transform: uppercase; letter-spacing: .5px; opacity: .6;
+  }
+  .card-title-lg {
+    font-size: 16px; font-weight: 700; color: var(--text);
+    margin-bottom: 14px; letter-spacing: -.2px; opacity: 1;
+    text-transform: none;
+  }
+
+  /* ── Section label ── */
+  .section-label {
+    font-size: 12px; font-weight: 700; letter-spacing: .8px;
+    text-transform: uppercase; color: var(--muted);
+    margin: 20px 0 10px; padding: 0 4px;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    border: none; border-radius: var(--radius-sm); cursor: pointer;
+    font-size: 15px; font-weight: 700; padding: 14px 20px;
+    transition: transform .15s, box-shadow .15s, opacity .15s;
+    width: 100%; font-family: inherit; letter-spacing: -.1px;
+  }
+  .btn:active { transform: scale(.96); opacity: .9; }
+  .btn-primary {
+    background: var(--primary-g);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(74,111,165,.35);
+  }
+  .btn-primary:active { box-shadow: 0 2px 8px rgba(74,111,165,.2); }
+  .btn-accent {
+    background: var(--accent-g);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(64,145,108,.3);
+  }
+  .btn-ghost {
+    background: var(--surface2);
+    color: var(--text);
+    box-shadow: none;
+    border: 1px solid var(--border);
+  }
+  .btn-danger  { background: var(--danger); color: #fff; }
+  .btn-sm { font-size: 13px; padding: 9px 16px; width: auto; border-radius: 10px; font-weight: 600; }
+
+  /* ── Form elements ── */
+  label {
+    font-size: 12px; font-weight: 700; color: var(--muted);
+    display: block; margin-bottom: 7px; text-transform: uppercase; letter-spacing: .4px;
+  }
+  textarea, input {
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    user-select: text !important;
+    -webkit-user-modify: read-write !important;
+    pointer-events: auto !important;
+    touch-action: manipulation;
+  }
+  textarea, input[type=text] {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 11px 14px;
+    font-size: 15px; font-family: inherit; font-weight: 400;
+    background: var(--surface2); color: var(--text); resize: vertical;
+    transition: border-color .2s, box-shadow .2s;
+    outline: none; cursor: text;
+    line-height: 1.5;
+  }
+  textarea:focus, input[type=text]:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(108,142,191,.15);
+  }
+  input[type=range] {
+    width: 100%; accent-color: var(--primary);
+    height: 6px; border-radius: 3px; cursor: pointer;
+    appearance: none;
+    background: linear-gradient(to right, var(--primary) var(--pct,50%), rgba(0,0,0,.1) var(--pct,50%));
+  }
+  .field { margin-bottom: 14px; }
+
+  /* ── Slider group ── */
+  .slider-group { margin-bottom: 6px; }
+  .slider-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+    background: var(--surface2); border-radius: 10px; padding: 10px 12px;
+  }
+  .slider-icon { font-size: 18px; flex-shrink: 0; }
+  .slider-label { font-size: 13px; font-weight: 600; flex:1; color: var(--text); }
+  .slider-val {
+    min-width: 26px; text-align: center; font-weight: 800; font-size: 15px;
+    color: var(--primary-d); flex-shrink: 0;
+    background: white; border-radius: 6px; padding: 2px 4px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* ── Emoji scale ── */
+  .emoji-scale {
+    display: flex; justify-content: space-between;
+    font-size: 20px; padding: 4px 12px 0;
+    opacity: .7;
+  }
+
+  /* ── Mood history card ── */
+  .mood-history-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .mood-history-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .mood-emoji-big { font-size: 28px; flex-shrink: 0; }
+  .mood-history-detail { flex:1; min-width:0; }
+  .mood-history-scores {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-top: 3px;
+  }
+  .mood-pill {
+    font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px;
+    background: var(--surface2); color: var(--muted);
+  }
+
+  /* ── Breathing ── */
+  #breath-container {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 20px 0 16px;
+  }
+  .breath-rings {
+    position: relative; width: 200px; height: 200px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 20px;
+  }
+  .breath-ring {
+    position: absolute; border-radius: 50%;
+    border: 2px solid rgba(108,142,191,.15);
+    transition: transform 1s ease, opacity 1s ease;
+  }
+  .breath-ring:nth-child(1) { width:200px; height:200px; }
+  .breath-ring:nth-child(2) { width:175px; height:175px; border-color:rgba(108,142,191,.2); }
+  .breath-ring:nth-child(3) { width:150px; height:150px; border-color:rgba(108,142,191,.25); }
+  #breath-circle {
+    width: 120px; height: 120px; border-radius: 50%;
+    background: var(--primary-g);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+    box-shadow: 0 0 0 0 rgba(108,142,191,.4);
+    transition: transform 1s ease, box-shadow 1s ease;
+    cursor: pointer; user-select: none; position: relative; z-index:1;
+  }
+  #breath-circle.inhale  { transform:scale(1.3); box-shadow:0 0 0 24px rgba(108,142,191,.12); }
+  #breath-circle.hold    { transform:scale(1.3); box-shadow:0 0 0 24px rgba(168,213,186,.2); }
+  #breath-circle.exhale  { transform:scale(1);   box-shadow:0 0 0 0  transparent; }
+  #breath-circle.hold2   { transform:scale(1);   box-shadow:0 0 0 0  transparent; }
+  #breath-label   { font-size: 11px; font-weight: 700; color: rgba(255,255,255,.8); letter-spacing:.5px; text-transform:uppercase; }
+  #breath-counter { font-size: 38px; font-weight: 800; color: #fff; line-height: 1; }
+  #breath-phase-name {
+    font-size: 20px; font-weight: 700; color: var(--primary-d);
+    margin-bottom: 4px; text-align: center; letter-spacing: -.3px;
+  }
+  #breath-cycles  { font-size: 13px; color: var(--muted); margin-bottom: 16px; text-align: center; }
+  #breath-progress-bar {
+    width: 100%; height: 5px; background: var(--surface2);
+    border-radius: 3px; overflow: hidden; margin-bottom: 18px;
+  }
+  #breath-progress-fill {
+    height: 100%; background: var(--primary-g); border-radius: 3px;
+    width: 0%; transition: width .5s linear;
+  }
+  .breath-guide {
+    display: flex; gap: 6px; justify-content: center; flex-wrap:wrap;
+  }
+  .breath-step {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    background: var(--surface2); border-radius: 10px; padding: 8px 12px;
+    font-size: 11px; font-weight: 600; color: var(--muted); min-width:60px;
+    border: 1px solid var(--border);
+  }
+  .breath-step-s { font-size: 18px; font-weight: 800; color: var(--primary-d); }
+
+  /* ── CBT tabs ── */
+  .mini-tabs {
+    display: flex; gap: 6px; margin-bottom: 14px;
+    background: var(--surface2); padding: 4px; border-radius: 12px;
+  }
+  .mini-tab {
+    flex:1; padding: 9px; border-radius: 9px; border: none;
+    background: transparent; font-size: 13px; font-weight: 700; cursor: pointer;
+    text-align: center; color: var(--muted); transition: all .2s; font-family:inherit;
+  }
+  .mini-tab.active {
+    background: var(--surface); color: var(--primary-d);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* ── Grounding step cards ── */
+  .grounding-step {
+    display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px;
+  }
+  .grounding-num {
+    width: 32px; height: 32px; border-radius: 50%; flex-shrink:0;
+    background: var(--primary-g); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 800; margin-top: 2px;
+    box-shadow: 0 2px 8px rgba(74,111,165,.3);
+  }
+  .grounding-step .field { flex:1; margin-bottom:0; }
+
+  /* ── Journal ── */
+  .journal-item {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 15px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--primary);
+  }
+  .journal-item:active { transform: scale(.99); box-shadow: var(--shadow); }
+  .journal-item-header { display: flex; justify-content: space-between; align-items: flex-start; }
+  .journal-item-title { font-weight: 700; font-size: 15px; flex:1; letter-spacing:-.2px; }
+  .journal-item-date  { font-size: 11px; color: var(--muted); margin-left: 8px; white-space: nowrap; font-weight:500; }
+  .journal-item-preview { font-size: 13px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+  .mood-tag {
+    display: inline-block; font-size: 11px; font-weight: 700;
+    padding: 3px 10px; border-radius: 20px; margin-top: 8px;
+    background: linear-gradient(135deg, #b7e4c7, #74c69d);
+    color: #1b4332; letter-spacing: .2px;
+  }
+
+  /* ── Stats grid ── */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .stat-box {
+    background: var(--surface2);
+    border-radius: var(--radius-sm); padding: 16px 12px; text-align: center;
+    border: 1px solid var(--border); position: relative; overflow: hidden;
+  }
+  .stat-box::before {
+    content: ''; position: absolute; top: -20px; right: -20px;
+    width: 60px; height: 60px; border-radius: 50%;
+    background: var(--primary-g); opacity: .07;
+  }
+  .stat-num { font-size: 28px; font-weight: 800; color: var(--primary-d); letter-spacing: -1px; }
+  .stat-lbl { font-size: 11px; color: var(--muted); margin-top: 3px; font-weight: 600; letter-spacing:.2px; }
+  .stat-icon { font-size: 18px; margin-bottom: 4px; }
+
+  /* ── Chart ── */
+  .chart-wrap { padding: 4px 0; overflow-x: auto; }
+  #mood-chart { display: block; width: 100%; }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed; bottom: calc(var(--tab-h) + 14px); left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    background: var(--text); color: #fff;
+    font-size: 13px; font-weight: 600;
+    padding: 11px 22px; border-radius: 28px; z-index: 999; white-space: nowrap;
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s, transform .2s;
+    box-shadow: 0 4px 20px rgba(0,0,0,.2);
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── Loading ── */
+  .loading {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px; padding: 30px; color: var(--muted); font-size: 14px;
+  }
+  .loading::before {
+    content: ''; width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid var(--primary); border-top-color: transparent;
+    animation: spin .7s linear infinite; flex-shrink:0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Modal ── */
+  #modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.5); backdrop-filter: blur(4px);
+    z-index: 200; align-items: flex-end;
+  }
+  #modal-overlay.open { display: flex; }
+  #modal-box {
+    background: var(--surface); border-radius: 24px 24px 0 0;
+    padding: 24px; width: 100%; max-height: 85vh; overflow-y: auto;
+    animation: slideup .3s cubic-bezier(.22,1,.36,1);
+  }
+  @keyframes slideup { from{transform:translateY(100%)} to{transform:none} }
+  .modal-handle {
+    width: 36px; height: 4px; border-radius: 2px;
+    background: var(--border); margin: 0 auto 18px; display:block;
+  }
+  #modal-title { font-size: 18px; font-weight: 800; margin-bottom: 6px; letter-spacing:-.3px; }
+  #modal-close {
+    position: absolute; top: 20px; right: 20px;
+    background: var(--surface2); border: none;
+    border-radius: 50%; width: 32px; height: 32px; cursor: pointer;
+    font-size: 16px; display:flex; align-items:center; justify-content:center;
+    color: var(--muted); box-shadow: var(--shadow-sm);
+  }
+
+  /* ── Utility ── */
+  .mt8  { margin-top: 8px; }
+  .mt12 { margin-top: 12px; }
+  .mt16 { margin-top: 16px; }
+  .mb8  { margin-bottom: 8px; }
+  .flex-row { display: flex; gap: 8px; }
+  .text-muted { color: var(--muted); font-size: 13px; }
+  .text-center { text-align: center; }
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="screen-container">
+
+    <!-- ══════════════════════════════════════════════
+         SCREEN 1 — MOOD CHECK-IN
+    ══════════════════════════════════════════════ -->
+    <div id="screen-mood" class="screen active">
+      <div class="screen-header">
+        <span class="screen-header-emoji">🌤</span>
+        <h1>Mood Check-in</h1>
+        <p>How are you feeling right now?</p>
+      </div>
+      <div class="screen-body">
+
+        <div class="card">
+          <div class="card-title">Rate each dimension</div>
+          <div class="slider-group" id="mood-sliders">
+            <div class="slider-row">
+              <span class="slider-icon">🌈</span>
+              <span class="slider-label">Overall</span>
+              <input type="range" min="1" max="5" value="3" id="sl-overall" class="mood-slider" />
+              <span class="slider-val" id="sv-overall">3</span>
+            </div>
+            <div class="slider-row">
+              <span class="slider-icon">💨</span>
+              <span class="slider-label">Anxiety</span>
+              <input type="range" min="1" max="5" value="3" id="sl-anxiety" class="mood-slider" />
+              <span class="slider-val" id="sv-anxiety">3</span>
+            </div>
+            <div class="slider-row">
+              <span class="slider-icon">⚡</span>
+              <span class="slider-label">Energy</span>
+              <input type="range" min="1" max="5" value="3" id="sl-energy" class="mood-slider" />
+              <span class="slider-val" id="sv-energy">3</span>
+            </div>
+            <div class="slider-row">
+              <span class="slider-icon">🎯</span>
+              <span class="slider-label">Focus</span>
+              <input type="range" min="1" max="5" value="3" id="sl-focus" class="mood-slider" />
+              <span class="slider-val" id="sv-focus">3</span>
+            </div>
+            <div class="slider-row">
+              <span class="slider-icon">🌙</span>
+              <span class="slider-label">Sleep</span>
+              <input type="range" min="1" max="5" value="3" id="sl-sleep" class="mood-slider" />
+              <span class="slider-val" id="sv-sleep">3</span>
+            </div>
+          </div>
+          <div class="emoji-scale">
+            <span title="Very low">😟</span><span>😕</span><span>😐</span><span>🙂</span><span title="Very high">😊</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Optional note</div>
+          <div class="field">
+            <textarea id="mood-note" rows="3" placeholder="What's on your mind right now?"></textarea>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="mood-submit-btn">Save Check-in</button>
+
+        <p class="section-label">Recent check-ins</p>
+        <div id="mood-recent-list"><div class="loading">Loading</div></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SCREEN 2 — BOX BREATHING
+    ══════════════════════════════════════════════ -->
+    <div id="screen-breathing" class="screen">
+      <div class="screen-header">
+        <span class="screen-header-emoji">🫧</span>
+        <h1>Box Breathing</h1>
+        <p>4-4-4-4 cycle · calm your nervous system</p>
+      </div>
+      <div class="screen-body">
+
+        <div class="card">
+          <div id="breath-container">
+            <div class="breath-rings">
+              <div class="breath-ring"></div>
+              <div class="breath-ring"></div>
+              <div class="breath-ring"></div>
+              <div id="breath-circle">
+                <span id="breath-label">Ready</span>
+                <span id="breath-counter"></span>
+              </div>
+            </div>
+
+            <div id="breath-phase-name">—</div>
+            <div id="breath-cycles">Cycles completed: <span id="breath-cycle-count">0</span></div>
+            <div id="breath-progress-bar"><div id="breath-progress-fill"></div></div>
+
+            <div class="flex-row" style="margin-bottom:16px">
+              <button class="btn btn-primary" id="breath-start-btn" style="flex:2">▶ Start</button>
+              <button class="btn btn-ghost btn-sm" id="breath-stop-btn" style="flex:1;display:none">■ Stop</button>
+            </div>
+
+            <div class="breath-guide">
+              <div class="breath-step"><span class="breath-step-s">4s</span>Inhale</div>
+              <div class="breath-step"><span class="breath-step-s">4s</span>Hold</div>
+              <div class="breath-step"><span class="breath-step-s">4s</span>Exhale</div>
+              <div class="breath-step"><span class="breath-step-s">4s</span>Hold</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="breathing-stats-card">
+          <div class="card-title">Your stats</div>
+          <div id="breathing-stats-content"><div class="loading">Loading</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SCREEN 3 — CBT REFRAME + GROUNDING
+    ══════════════════════════════════════════════ -->
+    <div id="screen-cbt" class="screen">
+      <div class="screen-header">
+        <span class="screen-header-emoji">🧠</span>
+        <h1>Reframe & Ground</h1>
+        <p>Challenge anxious thoughts · come back to the present</p>
+      </div>
+      <div class="screen-body">
+
+        <div class="mini-tabs">
+          <button class="mini-tab active" data-cbt-tab="reframe">💭 CBT Reframe</button>
+          <button class="mini-tab" data-cbt-tab="grounding">🌿 5-4-3-2-1</button>
+        </div>
+
+        <!-- CBT Reframe -->
+        <div id="cbt-tab-reframe" class="card">
+          <div class="card-title-lg">Thought Record</div>
+          <div class="field">
+            <label>Situation</label>
+            <textarea id="cbt-situation" rows="2" placeholder="What happened?"></textarea>
+          </div>
+          <div class="field">
+            <label>Automatic thought</label>
+            <textarea id="cbt-thought" rows="2" placeholder="What went through your mind?"></textarea>
+          </div>
+          <div class="field">
+            <label>Emotion &amp; intensity</label>
+            <input type="text" id="cbt-emotion" placeholder="e.g. Anxious 70%" />
+          </div>
+          <div class="field">
+            <label>Evidence FOR this thought</label>
+            <textarea id="cbt-for" rows="2" placeholder="Facts that support it…"></textarea>
+          </div>
+          <div class="field">
+            <label>Evidence AGAINST this thought</label>
+            <textarea id="cbt-against" rows="2" placeholder="Facts that challenge it…"></textarea>
+          </div>
+          <div class="field">
+            <label>Balanced thought</label>
+            <textarea id="cbt-balanced" rows="2" placeholder="A more balanced perspective…"></textarea>
+          </div>
+        </div>
+
+        <!-- 5-4-3-2-1 Grounding -->
+        <div id="cbt-tab-grounding" class="card" style="display:none">
+          <div class="card-title-lg">5-4-3-2-1 Grounding</div>
+          <p class="text-muted mb8" style="margin-bottom:16px">Name things you can perceive right now to anchor yourself in the present.</p>
+          <div class="grounding-step">
+            <div class="grounding-num">5</div>
+            <div class="field"><label>👁️ Things you SEE</label><textarea id="g5" rows="2" placeholder="List 5 things…"></textarea></div>
+          </div>
+          <div class="grounding-step">
+            <div class="grounding-num">4</div>
+            <div class="field"><label>✋ Things you TOUCH</label><textarea id="g4" rows="2" placeholder="List 4 things…"></textarea></div>
+          </div>
+          <div class="grounding-step">
+            <div class="grounding-num">3</div>
+            <div class="field"><label>👂 Things you HEAR</label><textarea id="g3" rows="2" placeholder="List 3 things…"></textarea></div>
+          </div>
+          <div class="grounding-step">
+            <div class="grounding-num">2</div>
+            <div class="field"><label>👃 Things you SMELL</label><textarea id="g2" rows="2" placeholder="List 2 things…"></textarea></div>
+          </div>
+          <div class="grounding-step">
+            <div class="grounding-num">1</div>
+            <div class="field"><label>👅 Thing you TASTE</label><textarea id="g1" rows="2" placeholder="List 1 thing…"></textarea></div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="cbt-save-btn">Save Entry</button>
+
+        <p class="section-label">Recent entries</p>
+        <div id="cbt-recent-list"><div class="loading">Loading</div></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SCREEN 4 — JOURNAL
+    ══════════════════════════════════════════════ -->
+    <div id="screen-journal" class="screen">
+      <div class="screen-header">
+        <span class="screen-header-emoji">📓</span>
+        <h1>Journal</h1>
+        <p>A safe space for your thoughts</p>
+      </div>
+      <div class="screen-body">
+
+        <div class="card">
+          <div class="card-title-lg" id="journal-form-title">New Entry</div>
+          <div class="field">
+            <label>Title</label>
+            <input type="text" id="j-title" placeholder="Give it a title…" maxlength="200" />
+          </div>
+          <div class="field">
+            <label>Content</label>
+            <textarea id="j-content" rows="5" placeholder="Write freely, this is just for you…"></textarea>
+          </div>
+          <div class="field">
+            <label>Mood tag <span style="font-weight:400;text-transform:none;opacity:.7">(optional)</span></label>
+            <input type="text" id="j-tag" placeholder="e.g. calm, anxious, hopeful" maxlength="50" />
+          </div>
+          <div class="flex-row mt8">
+            <button class="btn btn-primary" id="j-save-btn" style="flex:2">Save</button>
+            <button class="btn btn-ghost btn-sm" id="j-cancel-btn" style="flex:1;display:none">Cancel</button>
+          </div>
+        </div>
+
+        <p class="section-label">Your entries</p>
+        <div id="journal-list"><div class="loading">Loading</div></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SCREEN 5 — PROGRESS STATS
+    ══════════════════════════════════════════════ -->
+    <div id="screen-progress" class="screen">
+      <div class="screen-header">
+        <span class="screen-header-emoji">📈</span>
+        <h1>Progress</h1>
+        <p>Your wellness at a glance</p>
+      </div>
+      <div class="screen-body">
+        <div id="progress-content"><div class="loading">Loading</div></div>
+      </div>
+    </div>
+
+  </div><!-- end #screen-container -->
+
+  <!-- TAB BAR -->
+  <nav id="tabbar">
+    <button class="tab active" data-screen="mood">
+      <span class="icon">🌤</span>Mood
+    </button>
+    <button class="tab" data-screen="breathing">
+      <span class="icon">🫧</span>Breathe
+    </button>
+    <button class="tab" data-screen="cbt">
+      <span class="icon">🧠</span>Reframe
+    </button>
+    <button class="tab" data-screen="journal">
+      <span class="icon">📓</span>Journal
+    </button>
+    <button class="tab" data-screen="progress">
+      <span class="icon">📈</span>Progress
+    </button>
+  </nav>
+</div><!-- end #app -->
+
+<div id="toast"></div>
+
+<div id="modal-overlay">
+  <div id="modal-box" style="position:relative">
+    <span class="modal-handle"></span>
+    <button id="modal-close">✕</button>
+    <div id="modal-title"></div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+//  TELEGRAM WEBAPP INIT  (optional — keeps theme colors working
+//  if this page is opened inside a Telegram Mini App)
+// ════════════════════════════════════════════════════════════
+const twa = window.Telegram?.WebApp;
+if (twa) {
+  twa.ready();
+  twa.expand();
+  twa.onEvent('viewportChanged', () => {
+    const el = document.activeElement;
+    if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) {
+      setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+    }
+  });
+}
+if (twa?.themeParams) {
+  const tp = twa.themeParams;
+  const r  = document.documentElement.style;
+  if (tp.bg_color)           r.setProperty('--bg',        tp.bg_color);
+  if (tp.secondary_bg_color) r.setProperty('--surface',   tp.secondary_bg_color);
+  if (tp.secondary_bg_color) r.setProperty('--surface2',  tp.secondary_bg_color);
+  if (tp.text_color)         r.setProperty('--text',      tp.text_color);
+  if (tp.hint_color)         r.setProperty('--muted',     tp.hint_color);
+  if (tp.button_color)       r.setProperty('--primary',   tp.button_color);
+  if (tp.button_color)       r.setProperty('--primary-d', tp.button_color);
+  if (tp.button_text_color)  r.setProperty('--btn-text',  tp.button_text_color);
+}
+
+// ════════════════════════════════════════════════════════════
+//  LOCALSTORAGE DATA LAYER
+// ════════════════════════════════════════════════════════════
+const DB = {
+  get(key) {
+    try { return JSON.parse(localStorage.getItem('calm_' + key) || '[]'); }
+    catch { return []; }
+  },
+  set(key, val) {
+    localStorage.setItem('calm_' + key, JSON.stringify(val));
+  },
+  nextId(key) {
+    const items = DB.get(key);
+    return items.length ? Math.max(...items.map(i => i.id)) + 1 : 1;
+  },
+};
+
+function _saveMood(data) {
+  const items = DB.get('mood');
+  items.unshift({ id: DB.nextId('mood'), ...data, created_at: new Date().toISOString() });
+  DB.set('mood', items);
+}
+function _getMood(limit) {
+  return DB.get('mood').slice(0, limit);
+}
+function _getMoodStats() {
+  const items = DB.get('mood');
+  if (!items.length) return { count: 0, avg_overall: null, avg_anxiety: null, avg_energy: null, avg_focus: null, avg_sleep: null };
+  const avg = key => +(items.reduce((s, e) => s + (e[key] || 0), 0) / items.length).toFixed(1);
+  return { count: items.length, avg_overall: avg('overall'), avg_anxiety: avg('anxiety'),
+           avg_energy: avg('energy'), avg_focus: avg('focus'), avg_sleep: avg('sleep') };
+}
+function _getMoodTrend() {
+  const items = DB.get('mood');
+  const byDate = {};
+  items.forEach(e => {
+    const d = e.created_at.split('T')[0];
+    if (!byDate[d]) byDate[d] = [];
+    byDate[d].push(e.overall);
+  });
+  return Object.entries(byDate)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-7)
+    .map(([date, vals]) => ({
+      date,
+      avg_overall: +(vals.reduce((s, v) => s + v, 0) / vals.length).toFixed(1),
+    }));
+}
+
+function _saveBreathing(data) {
+  const items = DB.get('breathing');
+  items.unshift({ id: DB.nextId('breathing'), ...data, created_at: new Date().toISOString() });
+  DB.set('breathing', items);
+}
+function _getBreathingStats() {
+  const items = DB.get('breathing');
+  return {
+    total_sessions: items.length,
+    total_cycles:   items.reduce((s, e) => s + (e.cycles_completed || 0), 0),
+    total_minutes:  Math.round(items.reduce((s, e) => s + (e.duration_seconds || 0), 0) / 60),
+  };
+}
+
+function _saveCBT(data) {
+  const items = DB.get('cbt');
+  items.unshift({ id: DB.nextId('cbt'), ...data, created_at: new Date().toISOString() });
+  DB.set('cbt', items);
+}
+function _getCBT(limit) {
+  return DB.get('cbt').slice(0, limit);
+}
+
+function _saveJournal(data) {
+  const items = DB.get('journal');
+  const now = new Date().toISOString();
+  items.unshift({ id: DB.nextId('journal'), ...data, created_at: now, updated_at: now });
+  DB.set('journal', items);
+}
+function _getJournalList(limit) {
+  return DB.get('journal').slice(0, limit);
+}
+function _getJournalById(id) {
+  const entry = DB.get('journal').find(e => e.id === id);
+  if (!entry) throw new Error('Entry not found');
+  return entry;
+}
+function _updateJournal(id, data) {
+  const items = DB.get('journal');
+  const idx = items.findIndex(e => e.id === id);
+  if (idx === -1) throw new Error('Entry not found');
+  items[idx] = { ...items[idx], ...data, updated_at: new Date().toISOString() };
+  DB.set('journal', items);
+  return items[idx];
+}
+function _deleteJournal(id) {
+  DB.set('journal', DB.get('journal').filter(e => e.id !== id));
+}
+
+function _getProgress() {
+  return {
+    mood:          _getMoodStats(),
+    mood_trend:    _getMoodTrend(),
+    breathing:     _getBreathingStats(),
+    journal_count: DB.get('journal').length,
+    cbt_count:     DB.get('cbt').length,
+  };
+}
+
+// ════════════════════════════════════════════════════════════
+//  LOCAL API ROUTER  (same signature as the server-based api())
+//  All application code below this point is identical to the
+//  Railway version — only this function changed.
+// ════════════════════════════════════════════════════════════
+async function api(method, path, body) {
+  const qs   = path.includes('?') ? path.split('?')[1] : '';
+  const lim  = () => +(new URLSearchParams(qs).get('limit') || 30);
+  const idOf = () => +path.match(/\/(\d+)(?:\?|$)/)[1];
+
+  // Mood
+  if (method === 'POST' && path === '/api/mood')                         { _saveMood(body); return body; }
+  if (method === 'GET'  && path.startsWith('/api/mood') && qs)            return _getMood(lim());
+  if (method === 'GET'  && path === '/api/mood/stats')                    return _getMoodStats();
+
+  // Breathing
+  if (method === 'POST' && path === '/api/breathing')                    { _saveBreathing(body); return body; }
+  if (method === 'GET'  && path === '/api/breathing/stats')              return _getBreathingStats();
+
+  // CBT
+  if (method === 'POST' && path === '/api/cbt')                          { _saveCBT(body); return body; }
+  if (method === 'GET'  && path.startsWith('/api/cbt'))                  return _getCBT(lim() || 10);
+
+  // Journal
+  if (method === 'POST'   && path === '/api/journal')                    { _saveJournal(body); return body; }
+  if (method === 'DELETE' && path.match(/\/api\/journal\/\d+/))          { _deleteJournal(idOf()); return null; }
+  if (method === 'PATCH'  && path.match(/\/api\/journal\/\d+/))          return _updateJournal(idOf(), body);
+  if (method === 'GET'    && path.match(/\/api\/journal\/\d+/))          return _getJournalById(idOf());
+  if (method === 'GET'    && path.startsWith('/api/journal'))            return _getJournalList(lim());
+
+  // Progress
+  if (method === 'GET'  && path === '/api/progress')                     return _getProgress();
+
+  // Me (no-op for static version)
+  if (method === 'GET'  && path === '/api/me')                           return { id: 1 };
+
+  throw new Error('Unknown route: ' + method + ' ' + path);
+}
+
+// ════════════════════════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════════════════════════
+let _toastTimer;
+function toast(msg, duration = 2500) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), duration);
+}
+
+// ════════════════════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════════════════════
+const screens = {
+  mood:      document.getElementById('screen-mood'),
+  breathing: document.getElementById('screen-breathing'),
+  cbt:       document.getElementById('screen-cbt'),
+  journal:   document.getElementById('screen-journal'),
+  progress:  document.getElementById('screen-progress'),
+};
+const tabs = document.querySelectorAll('.tab');
+
+function showScreen(name) {
+  Object.entries(screens).forEach(([k, el]) => el.classList.toggle('active', k === name));
+  tabs.forEach(t => t.classList.toggle('active', t.dataset.screen === name));
+  if (name === 'mood')      loadMoodRecent();
+  if (name === 'breathing') loadBreathingStats();
+  if (name === 'cbt')       loadCBTRecent();
+  if (name === 'journal')   loadJournalList();
+  if (name === 'progress')  loadProgress();
+}
+
+tabs.forEach(t => t.addEventListener('click', () => showScreen(t.dataset.screen)));
+
+// ════════════════════════════════════════════════════════════
+//  SCREEN 1 — MOOD
+// ════════════════════════════════════════════════════════════
+const moodSliders = document.querySelectorAll('.mood-slider');
+
+function updateSliderGradient(input) {
+  const pct = ((input.value - input.min) / (input.max - input.min)) * 100;
+  input.style.setProperty('--pct', pct + '%');
+}
+
+moodSliders.forEach(sl => {
+  const valEl = document.getElementById('sv-' + sl.id.replace('sl-', ''));
+  function update() { valEl.textContent = sl.value; updateSliderGradient(sl); }
+  sl.addEventListener('input', update);
+  update();
+});
+
+document.getElementById('mood-submit-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('mood-submit-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    await api('POST', '/api/mood', {
+      overall: +document.getElementById('sl-overall').value,
+      anxiety: +document.getElementById('sl-anxiety').value,
+      energy:  +document.getElementById('sl-energy').value,
+      focus:   +document.getElementById('sl-focus').value,
+      sleep:   +document.getElementById('sl-sleep').value,
+      note:    document.getElementById('mood-note').value.trim() || null,
+    });
+    toast('✅ Check-in saved!');
+    document.getElementById('mood-note').value = '';
+    loadMoodRecent();
+  } catch (e) { toast('❌ ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = 'Save Check-in'; }
+});
+
+async function loadMoodRecent() {
+  const el = document.getElementById('mood-recent-list');
+  el.innerHTML = '<div class="loading">Loading</div>';
+  try {
+    const entries = await api('GET', '/api/mood?limit=5');
+    if (!entries.length) { el.innerHTML = '<p class="text-muted text-center">No entries yet. Start tracking!</p>'; return; }
+    el.innerHTML = `<div class="card">${entries.map(e => `
+      <div class="mood-history-item">
+        <span class="mood-emoji-big">${moodEmoji(e.overall)}</span>
+        <div class="mood-history-detail">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:700;font-size:15px">Overall: ${e.overall}/5</span>
+            <span class="text-muted" style="font-size:11px">${fmtDate(e.created_at)}</span>
+          </div>
+          <div class="mood-history-scores">
+            <span class="mood-pill">💨 ${e.anxiety}</span>
+            <span class="mood-pill">⚡ ${e.energy}</span>
+            <span class="mood-pill">🎯 ${e.focus}</span>
+            <span class="mood-pill">🌙 ${e.sleep}</span>
+          </div>
+          ${e.note ? `<div style="font-size:13px;margin-top:6px;color:var(--text);line-height:1.4">${esc(e.note)}</div>` : ''}
+        </div>
+      </div>
+    `).join('')}</div>`;
+  } catch (e) { el.innerHTML = `<p class="text-muted text-center">Error: ${e.message}</p>`; }
+}
+
+function moodEmoji(v) { return ['', '😟','😕','😐','🙂','😊'][v] || '😐'; }
+
+// ════════════════════════════════════════════════════════════
+//  SCREEN 2 — BREATHING
+// ════════════════════════════════════════════════════════════
+const PHASES = [
+  { name: 'Inhale', cls: 'inhale', secs: 4 },
+  { name: 'Hold',   cls: 'hold',   secs: 4 },
+  { name: 'Exhale', cls: 'exhale', secs: 4 },
+  { name: 'Hold',   cls: 'hold2',  secs: 4 },
+];
+const CYCLE_SECS = PHASES.reduce((s, p) => s + p.secs, 0);
+
+let breathRunning = false, breathCycles = 0, breathPhaseIdx = 0;
+let breathSecInPhase = 0, breathInterval = null, breathStartTime = null;
+
+const circleEl    = document.getElementById('breath-circle');
+const labelEl     = document.getElementById('breath-label');
+const counterEl   = document.getElementById('breath-counter');
+const phaseNameEl = document.getElementById('breath-phase-name');
+const cyclesEl    = document.getElementById('breath-cycle-count');
+const progFill    = document.getElementById('breath-progress-fill');
+const startBtn    = document.getElementById('breath-start-btn');
+const stopBtn     = document.getElementById('breath-stop-btn');
+
+startBtn.addEventListener('click', startBreathing);
+stopBtn.addEventListener('click', stopBreathing);
+
+function startBreathing() {
+  breathRunning = true; breathCycles = 0; breathPhaseIdx = 0; breathSecInPhase = 0;
+  breathStartTime = Date.now(); cyclesEl.textContent = 0;
+  startBtn.style.display = 'none'; stopBtn.style.display = '';
+  enterPhase(0);
+  breathInterval = setInterval(breathTick, 1000);
+}
+
+function enterPhase(idx) {
+  const phase = PHASES[idx];
+  circleEl.className = ''; void circleEl.offsetWidth;
+  circleEl.classList.add(phase.cls);
+  phaseNameEl.textContent = phase.name;
+  labelEl.textContent     = phase.name;
+  counterEl.textContent   = phase.secs;
+  breathSecInPhase = 0;
+}
+
+function breathTick() {
+  breathSecInPhase++;
+  const phase = PHASES[breathPhaseIdx];
+  const remaining = phase.secs - breathSecInPhase;
+  counterEl.textContent = remaining;
+  let elapsed = PHASES.slice(0, breathPhaseIdx).reduce((s, p) => s + p.secs, 0) + breathSecInPhase;
+  progFill.style.width = (elapsed / CYCLE_SECS * 100) + '%';
+  if (remaining <= 0) {
+    breathPhaseIdx = (breathPhaseIdx + 1) % PHASES.length;
+    if (breathPhaseIdx === 0) { breathCycles++; cyclesEl.textContent = breathCycles; }
+    enterPhase(breathPhaseIdx);
+  }
+}
+
+async function stopBreathing() {
+  if (!breathRunning) return;
+  breathRunning = false; clearInterval(breathInterval);
+  const elapsed = Math.round((Date.now() - breathStartTime) / 1000);
+  circleEl.className = ''; labelEl.textContent = 'Ready'; counterEl.textContent = '';
+  phaseNameEl.textContent = '—'; cyclesEl.textContent = 0; progFill.style.width = '0%';
+  startBtn.style.display = ''; stopBtn.style.display = 'none';
+  if (breathCycles > 0) {
+    try {
+      await api('POST', '/api/breathing', { cycles_completed: breathCycles, duration_seconds: elapsed });
+      toast(`✅ ${breathCycles} cycle${breathCycles > 1 ? 's' : ''} logged!`);
+      loadBreathingStats();
+    } catch (e) { toast('❌ Could not save session'); }
+  }
+}
+
+async function loadBreathingStats() {
+  const el = document.getElementById('breathing-stats-content');
+  el.innerHTML = '<div class="loading">Loading</div>';
+  try {
+    const s = await api('GET', '/api/breathing/stats');
+    el.innerHTML = `
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-icon">🫧</div><div class="stat-num">${s.total_sessions}</div><div class="stat-lbl">Sessions</div></div>
+        <div class="stat-box"><div class="stat-icon">🔁</div><div class="stat-num">${s.total_cycles}</div><div class="stat-lbl">Cycles</div></div>
+        <div class="stat-box" style="grid-column:span 2"><div class="stat-icon">⏱️</div><div class="stat-num">${s.total_minutes} min</div><div class="stat-lbl">Total mindful breathing</div></div>
+      </div>`;
+  } catch (e) { el.innerHTML = `<p class="text-muted text-center">Error: ${e.message}</p>`; }
+}
+
+// ════════════════════════════════════════════════════════════
+//  SCREEN 3 — CBT / GROUNDING
+// ════════════════════════════════════════════════════════════
+document.querySelectorAll('[data-cbt-tab]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-cbt-tab]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('cbt-tab-reframe').style.display   = btn.dataset.cbtTab === 'reframe'   ? '' : 'none';
+    document.getElementById('cbt-tab-grounding').style.display = btn.dataset.cbtTab === 'grounding' ? '' : 'none';
+  });
+});
+
+document.getElementById('cbt-save-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('cbt-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const payload = {
+      situation: val('cbt-situation'), automatic_thought: val('cbt-thought'),
+      emotion: val('cbt-emotion'), evidence_for: val('cbt-for'),
+      evidence_against: val('cbt-against'), balanced_thought: val('cbt-balanced'),
+      grounding_5_see: val('g5'), grounding_4_touch: val('g4'),
+      grounding_3_hear: val('g3'), grounding_2_smell: val('g2'), grounding_1_taste: val('g1'),
+    };
+    if (Object.values(payload).every(v => !v)) { toast('Please fill at least one field'); return; }
+    await api('POST', '/api/cbt', payload);
+    toast('✅ Entry saved!');
+    ['cbt-situation','cbt-thought','cbt-emotion','cbt-for','cbt-against','cbt-balanced',
+     'g5','g4','g3','g2','g1'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    loadCBTRecent();
+  } catch (e) { toast('❌ ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = 'Save Entry'; }
+});
+
+async function loadCBTRecent() {
+  const el = document.getElementById('cbt-recent-list');
+  el.innerHTML = '<div class="loading">Loading</div>';
+  try {
+    const entries = await api('GET', '/api/cbt?limit=5');
+    if (!entries.length) { el.innerHTML = '<p class="text-muted text-center">No entries yet.</p>'; return; }
+    el.innerHTML = entries.map(e => `
+      <div class="journal-item">
+        <div class="journal-item-header">
+          <span class="journal-item-title">${esc(e.situation || e.grounding_5_see || 'Entry')}</span>
+          <span class="journal-item-date">${fmtDate(e.created_at)}</span>
+        </div>
+        ${e.automatic_thought ? `<div class="journal-item-preview">💭 ${esc(e.automatic_thought)}</div>` : ''}
+        ${e.balanced_thought  ? `<div class="journal-item-preview" style="color:var(--accent-d)">✨ ${esc(e.balanced_thought)}</div>` : ''}
+      </div>
+    `).join('');
+  } catch (e) { el.innerHTML = `<p class="text-muted text-center">Error: ${e.message}</p>`; }
+}
+
+// ════════════════════════════════════════════════════════════
+//  SCREEN 4 — JOURNAL
+// ════════════════════════════════════════════════════════════
+let editingJournalId = null;
+
+document.getElementById('j-save-btn').addEventListener('click', async () => {
+  const title   = document.getElementById('j-title').value.trim();
+  const content = document.getElementById('j-content').value.trim();
+  const tag     = document.getElementById('j-tag').value.trim() || null;
+  if (!title || !content) { toast('Title and content are required'); return; }
+  const btn = document.getElementById('j-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    if (editingJournalId) {
+      await api('PATCH', `/api/journal/${editingJournalId}`, { title, content, mood_tag: tag });
+      toast('✅ Entry updated!'); cancelJournalEdit();
+    } else {
+      await api('POST', '/api/journal', { title, content, mood_tag: tag });
+      toast('✅ Entry saved!');
+      document.getElementById('j-title').value   = '';
+      document.getElementById('j-content').value = '';
+      document.getElementById('j-tag').value     = '';
+    }
+    loadJournalList();
+  } catch (e) { toast('❌ ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = 'Save'; }
+});
+
+document.getElementById('j-cancel-btn').addEventListener('click', cancelJournalEdit);
+
+function cancelJournalEdit() {
+  editingJournalId = null;
+  document.getElementById('j-title').value   = '';
+  document.getElementById('j-content').value = '';
+  document.getElementById('j-tag').value     = '';
+  document.getElementById('journal-form-title').textContent = 'New Entry';
+  document.getElementById('j-cancel-btn').style.display = 'none';
+}
+
+async function loadJournalList() {
+  const el = document.getElementById('journal-list');
+  el.innerHTML = '<div class="loading">Loading</div>';
+  try {
+    const entries = await api('GET', '/api/journal?limit=30');
+    if (!entries.length) { el.innerHTML = '<p class="text-muted text-center">No journal entries yet.</p>'; return; }
+    el.innerHTML = entries.map(e => `
+      <div class="journal-item" onclick="openJournalModal(${e.id})">
+        <div class="journal-item-header">
+          <span class="journal-item-title">${esc(e.title)}</span>
+          <span class="journal-item-date">${fmtDate(e.created_at)}</span>
+        </div>
+        <div class="journal-item-preview">${esc(e.content.slice(0,120))}${e.content.length>120?'…':''}</div>
+        ${e.mood_tag ? `<span class="mood-tag">${esc(e.mood_tag)}</span>` : ''}
+      </div>
+    `).join('');
+  } catch (e) { el.innerHTML = `<p class="text-muted text-center">Error: ${e.message}</p>`; }
+}
+
+let _journalCache = {};
+
+async function openJournalModal(id) {
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('modal-title').textContent = 'Loading…';
+  document.getElementById('modal-body').innerHTML = '<div class="loading">Loading</div>';
+  try {
+    const e = await api('GET', `/api/journal/${id}`);
+    _journalCache[id] = e;
+    document.getElementById('modal-title').textContent = e.title;
+    document.getElementById('modal-body').innerHTML = `
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px">${fmtDateFull(e.created_at)}</p>
+      ${e.mood_tag ? `<span class="mood-tag" style="margin-bottom:12px;display:inline-block">${esc(e.mood_tag)}</span>` : ''}
+      <div style="white-space:pre-wrap;font-size:14px;line-height:1.7;color:var(--text)">${esc(e.content)}</div>
+      <div class="flex-row mt16">
+        <button class="btn btn-ghost btn-sm" onclick="editJournalEntry(${id})">✏️ Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteJournalEntry(${id})">🗑 Delete</button>
+      </div>`;
+  } catch (e) { document.getElementById('modal-body').innerHTML = `<p class="text-muted">Error: ${e.message}</p>`; }
+}
+
+function editJournalEntry(id) {
+  const e = _journalCache[id];
+  if (!e) return;
+  closeModal();
+  editingJournalId = id;
+  document.getElementById('j-title').value   = e.title;
+  document.getElementById('j-content').value = e.content;
+  document.getElementById('j-tag').value     = e.mood_tag || '';
+  document.getElementById('journal-form-title').textContent = 'Edit Entry';
+  document.getElementById('j-cancel-btn').style.display = '';
+  document.getElementById('screen-container').scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function deleteJournalEntry(id) {
+  if (!confirm('Delete this entry?')) return;
+  try {
+    await api('DELETE', `/api/journal/${id}`);
+    toast('🗑 Entry deleted'); closeModal(); loadJournalList();
+  } catch (e) { toast('❌ ' + e.message); }
+}
+
+document.getElementById('modal-close').addEventListener('click', closeModal);
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+});
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+
+window.openJournalModal   = openJournalModal;
+window.editJournalEntry   = editJournalEntry;
+window.deleteJournalEntry = deleteJournalEntry;
+
+// ════════════════════════════════════════════════════════════
+//  SCREEN 5 — PROGRESS
+// ════════════════════════════════════════════════════════════
+async function loadProgress() {
+  const el = document.getElementById('progress-content');
+  el.innerHTML = '<div class="loading">Loading</div>';
+  try {
+    const p = await api('GET', '/api/progress');
+    el.innerHTML = `
+      <div class="card">
+        <div class="card-title">Mood summary</div>
+        <div class="stats-grid">
+          <div class="stat-box"><div class="stat-icon">📋</div><div class="stat-num">${p.mood.count}</div><div class="stat-lbl">Check-ins</div></div>
+          <div class="stat-box"><div class="stat-icon">🌈</div><div class="stat-num">${p.mood.avg_overall || '—'}</div><div class="stat-lbl">Avg Overall</div></div>
+          <div class="stat-box"><div class="stat-icon">💨</div><div class="stat-num">${p.mood.avg_anxiety || '—'}</div><div class="stat-lbl">Avg Anxiety</div></div>
+          <div class="stat-box"><div class="stat-icon">⚡</div><div class="stat-num">${p.mood.avg_energy || '—'}</div><div class="stat-lbl">Avg Energy</div></div>
+        </div>
+        ${p.mood_trend.length > 1 ? `
+        <div class="card-title" style="margin-top:8px;margin-bottom:8px">7-day trend</div>
+        <div class="chart-wrap"><canvas id="mood-chart" height="120"></canvas></div>`
+        : `<p class="text-muted text-center" style="font-size:13px;padding:8px 0">Log more moods to see the trend chart.</p>`}
+      </div>
+      <div class="card">
+        <div class="card-title">Breathing sessions</div>
+        <div class="stats-grid">
+          <div class="stat-box"><div class="stat-icon">🫧</div><div class="stat-num">${p.breathing.total_sessions}</div><div class="stat-lbl">Sessions</div></div>
+          <div class="stat-box"><div class="stat-icon">🔁</div><div class="stat-num">${p.breathing.total_cycles}</div><div class="stat-lbl">Cycles</div></div>
+          <div class="stat-box" style="grid-column:span 2"><div class="stat-icon">⏱️</div><div class="stat-num">${p.breathing.total_minutes} min</div><div class="stat-lbl">Total mindful breathing</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Activity</div>
+        <div class="stats-grid">
+          <div class="stat-box"><div class="stat-icon">📓</div><div class="stat-num">${p.journal_count}</div><div class="stat-lbl">Journal entries</div></div>
+          <div class="stat-box"><div class="stat-icon">🧠</div><div class="stat-num">${p.cbt_count}</div><div class="stat-lbl">CBT / Grounding</div></div>
+        </div>
+      </div>`;
+    if (p.mood_trend.length > 1) requestAnimationFrame(() => drawMoodChart(p.mood_trend));
+  } catch (e) { el.innerHTML = `<p class="text-muted text-center">Error: ${e.message}</p>`; }
+}
+
+function drawMoodChart(trend) {
+  const canvas = document.getElementById('mood-chart');
+  if (!canvas) return;
+  const W = canvas.parentElement.offsetWidth || 300;
+  canvas.width = W; canvas.height = 120;
+  const ctx = canvas.getContext('2d');
+  const PAD_L = 28, PAD_R = 10, PAD_T = 12, PAD_B = 24;
+  const cw = W - PAD_L - PAD_R, ch = 120 - PAD_T - PAD_B;
+  const vals = trend.map(d => d.avg_overall);
+  const minV = 1, maxV = 5;
+  const xPos = i => PAD_L + (i / (trend.length - 1)) * cw;
+  const yPos = v => PAD_T + ch - ((v - minV) / (maxV - minV)) * ch;
+  ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+  for (let v = 1; v <= 5; v++) {
+    const y = yPos(v);
+    ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(PAD_L + cw, y); ctx.stroke();
+    ctx.fillStyle = '#a0aec0'; ctx.font = '10px sans-serif'; ctx.fillText(v, 2, y + 4);
+  }
+  const grad = ctx.createLinearGradient(0, PAD_T, 0, PAD_T + ch);
+  grad.addColorStop(0, 'rgba(124,156,191,.35)'); grad.addColorStop(1, 'rgba(124,156,191,.0)');
+  ctx.beginPath(); ctx.moveTo(xPos(0), yPos(vals[0]));
+  for (let i = 1; i < trend.length; i++) ctx.lineTo(xPos(i), yPos(vals[i]));
+  ctx.lineTo(xPos(trend.length - 1), PAD_T + ch); ctx.lineTo(xPos(0), PAD_T + ch);
+  ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+  ctx.beginPath(); ctx.strokeStyle = '#7c9cbf'; ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.moveTo(xPos(0), yPos(vals[0]));
+  for (let i = 1; i < trend.length; i++) ctx.lineTo(xPos(i), yPos(vals[i]));
+  ctx.stroke();
+  trend.forEach((d, i) => {
+    ctx.beginPath(); ctx.arc(xPos(i), yPos(vals[i]), 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#5a7fa8'; ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(xPos(i), yPos(vals[i]), 2, 0, Math.PI * 2); ctx.fill();
+    const [,, mm, dd] = d.date.split('-'); // yyyy-mm-dd
+    ctx.fillStyle = '#a0aec0'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(`${mm}/${dd}`, xPos(i), 120 - 4);
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+//  UTILITIES
+// ════════════════════════════════════════════════════════════
+function val(id) { const el = document.getElementById(id); return el ? el.value.trim() || null : null; }
+
+function esc(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+          .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function fmtDate(iso) {
+  const d = new Date(iso.endsWith('Z') ? iso : iso + 'Z');
+  const diff = (Date.now() - d) / 1000;
+  if (diff < 60)    return 'Just now';
+  if (diff < 3600)  return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  return d.toLocaleDateString();
+}
+function fmtDateFull(iso) {
+  return new Date(iso.endsWith('Z') ? iso : iso + 'Z').toLocaleString();
+}
+
+// ════════════════════════════════════════════════════════════
+//  INITIAL LOAD
+// ════════════════════════════════════════════════════════════
+loadMoodRecent();
+</script>
+</body>
+</html>
