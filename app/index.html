@@ -20,6 +20,7 @@
     --shadow:    0 2px 12px rgba(0,0,0,.08);
     --radius:    14px;
     --tab-h:     56px;
+    --btn-text:  #ffffff;
   }
   * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
   body {
@@ -83,8 +84,8 @@
     width:100%;
   }
   .btn:active { transform:scale(.97); opacity:.85; }
-  .btn-primary { background:var(--primary); color:#fff; }
-  .btn-accent  { background:var(--accent-d); color:#fff; }
+  .btn-primary { background:var(--primary); color:var(--btn-text, #fff); }
+  .btn-accent  { background:var(--accent-d); color:var(--btn-text, #fff); }
   .btn-ghost   { background:var(--surface2); color:var(--text); }
   .btn-danger  { background:var(--danger); color:#fff; }
   .btn-sm { font-size:13px; padding:8px 14px; width:auto; border-radius:8px; }
@@ -507,11 +508,18 @@ if (twa) {
 }
 
 const initData = twa?.initData || '';
-// Use Telegram theme colors when available
+// Apply Telegram theme colors so text is always visible against the correct background
 if (twa?.themeParams) {
   const tp = twa.themeParams;
-  if (tp.bg_color)   document.documentElement.style.setProperty('--bg',      tp.bg_color);
-  if (tp.text_color) document.documentElement.style.setProperty('--text',    tp.text_color);
+  const r = document.documentElement.style;
+  if (tp.bg_color)            r.setProperty('--bg',       tp.bg_color);
+  if (tp.secondary_bg_color)  r.setProperty('--surface',  tp.secondary_bg_color);
+  if (tp.secondary_bg_color)  r.setProperty('--surface2', tp.secondary_bg_color);
+  if (tp.text_color)          r.setProperty('--text',     tp.text_color);
+  if (tp.hint_color)          r.setProperty('--muted',    tp.hint_color);
+  if (tp.button_color)        r.setProperty('--primary',  tp.button_color);
+  if (tp.button_color)        r.setProperty('--primary-d',tp.button_color);
+  if (tp.button_text_color)   r.setProperty('--btn-text', tp.button_text_color);
 }
 
 // ════════════════════════════════════════════════════════════
